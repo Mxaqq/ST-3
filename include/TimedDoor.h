@@ -39,7 +39,8 @@ class TimedDoor : public Door {
   void unlock();
   void lock();
   int  getTimeOut() const;
-  void throwState();
+  virtual void throwState();
+  int getTimeOut();
 };
 
 class Timer {
