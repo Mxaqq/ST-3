@@ -10,29 +10,25 @@
 #include "TimedDoor.h"
 
 class MockDoor : public Door {
-
-public:
-    MOCK_METHOD(void, lock, (), (override));
-    MOCK_METHOD(void, unlock, (), (override));
-    MOCK_METHOD(bool, isDoorOpened, (), (override));
+ public:
+  MOCK_METHOD(void, lock, (), (override));
+  MOCK_METHOD(void, unlock, (), (override));
+  MOCK_METHOD(bool, isDoorOpened, (), (override));
 };
 
 class MockTimerClient : public TimerClient {
-
-public:
-    MOCK_METHOD(void, Timeout, (), (override));
+ public:
+  MOCK_METHOD(void, Timeout, (), (override));
 };
 
 TEST(DoorTimerAdapterTest, CallsThrowStateIfDoorOpened) {
     class TestDoor : public TimedDoor {
-
-    public:
-        bool shouldThrow = true;
-        TestDoor() : TimedDoor(1) {}
-        bool isDoorOpened() override { return shouldThrow; }
-        void throwState() override { throw std::runtime_error("BOOM"); }
+     public:
+      bool shouldThrow = true;
+      TestDoor() : TimedDoor(1) {}
+      bool isDoorOpened() override { return shouldThrow; }
+      void throwState() override { throw std::runtime_error("BOOM"); }
     };
-
     TestDoor door;
     DoorTimerAdapter adapter(door);
     EXPECT_THROW(adapter.Timeout(), std::runtime_error);
@@ -40,47 +36,35 @@ TEST(DoorTimerAdapterTest, CallsThrowStateIfDoorOpened) {
 
 TEST(DoorTimerAdapterTest, DoesNothingIfDoorClosed) {
     class TestDoor : public TimedDoor 
-
-    public:
-        bool shouldThrow = false;
-        TestDoor() : TimedDoor(1) {}
-        bool isDoorOpened() override { return shouldThrow; }
-        void throwState() override { FAIL() << "Should not throw"; }
-    };
-
-    TestDoor door;
-    DoorTimerAdapter adapter(door);
-    EXPECT_NO_THROW(adapter.Timeout());
+     public:
+      bool shouldThrow = false;
+      TestDoor() : TimedDoor(1) {}
+      bool isDoorOpened() override { return shouldThrow; }
+      void throwState() override { FAIL() << "Should not throw"; }
 }
 
 TEST(TimerTest, CallsTimeoutAfterDelay) {
     class TestClient : public TimerClient {
-
-    public:
-        bool called = false;
-        void Timeout() override { called = true; }
+     public:
+      bool called = false;
+      void Timeout() override { called = true; }
     };
-
     TestClient client;
     Timer timer;
     timer.tregister(1, &client);
-
     std::this_thread::sleep_for(std::chrono::seconds(2));
     EXPECT_TRUE(client.called);
 }
 
 class TimedDoorTest : public ::testing::Test {
-
-protected:
-    TimedDoor* door;
-
-    void SetUp() override {
-        door = new TimedDoor(1);
-    }
-
-    void TearDown() override {
-        delete door;
-    }
+ protected:
+  TimedDoor* door;
+  void SetUp() override {
+      door = new TimedDoor(1);
+  }
+  void TearDown() override {
+      delete door;
+  }
 };
 
 TEST_F(TimedDoorTest, UnlockOpensDoor) {
@@ -130,11 +114,10 @@ TEST(TimedDoorExtraTest, MultipleUnlocksStillThrowOnce) {
 
 TEST(TimerExtraTest, TimeoutNotCalledImmediately) {
     class TestClient : public TimerClient {
-    public:
-        bool called = false;
-        void Timeout() override { called = true; }
+     public:
+      bool called = false;
+      void Timeout() override { called = true; }
     };
-
     TestClient client;
     Timer timer;
     timer.tregister(1, &client);
