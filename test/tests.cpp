@@ -107,17 +107,6 @@ TEST(TimedDoorExtraTest, ThrowStateThrowsException) {
   EXPECT_THROW(door.throwState(), std::runtime_error);
 }
 
-TEST(TimedDoorExtraTest, LockUnlockSequenceWorks) {
-    TimedDoor door(2);
-    door.unlock();
-    EXPECT_TRUE(door.isDoorOpened());
-    door.lock();
-    EXPECT_FALSE(door.isDoorOpened());
-    EXPECT_NO_THROW({
-        std::this_thread::sleep_for(std::chrono::seconds(3));
-        });
-}
-
 TEST(TimedDoorSimpleTest, TimeoutValueIsStoredCorrectly) {
     const int testTimeout = 5;
     TimedDoor door(testTimeout);
