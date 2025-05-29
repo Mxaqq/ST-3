@@ -40,7 +40,6 @@ class TimedDoor : public Door {
   void lock();
   int  getTimeOut() const;
   virtual void throwState();
-  int getTimeOut();
 };
 
 class Timer {

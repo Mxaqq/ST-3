@@ -2,10 +2,12 @@
 
 #include <gtest/gtest.h>
 #include <gmock/gmock.h>
-#include "TimedDoor.h"
+
 #include <stdexcept>
 #include <thread>
 #include <chrono>
+
+#include "TimedDoor.h"
 
 class MockDoor : public Door {
 
