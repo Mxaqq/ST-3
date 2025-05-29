@@ -116,8 +116,17 @@ TEST(TimedDoorExtraTest, MultipleUnlocksStillThrowOnce) {
     TimedDoor door(1);
     door.unlock();
     door.unlock();
-    EXPECT_THROW(std::this_thread::sleep_for(std::chrono::seconds(2)), 
-        std::runtime_error);
+
+    try {
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+        FAIL() << "Expected runtime_error not thrown";
+    }
+    catch (const std::runtime_error& e) {
+        EXPECT_STREQ(e.what(), "Door left open too long!");
+    }
+    catch (...) {
+        FAIL() << "Expected runtime_error, got different exception";
+    }
 }
 
 TEST(TimerExtraTest, TimeoutNotCalledImmediately) {
