@@ -35,19 +35,25 @@ TEST(DoorTimerAdapterTest, CallsThrowStateIfDoorOpened) {
 }
 
 TEST(DoorTimerAdapterTest, DoesNothingIfDoorClosed) {
-    class TestDoor : public TimedDoor 
+    class TestDoor : public TimedDoor {
      public:
       bool shouldThrow = false;
       TestDoor() : TimedDoor(1) {}
       bool isDoorOpened() override { return shouldThrow; }
       void throwState() override { FAIL() << "Should not throw"; }
+};
+
+    TestDoor door;
+    DoorTimerAdapter adapter(door);
+    EXPECT_NO_THROW(adapter.Timeout());
 }
+
 
 TEST(TimerTest, CallsTimeoutAfterDelay) {
     class TestClient : public TimerClient {
-     public:
-      bool called = false;
-      void Timeout() override { called = true; }
+    public:
+     bool called = false;
+     void Timeout() override { called = true; }
     };
     TestClient client;
     Timer timer;
@@ -60,7 +66,7 @@ class TimedDoorTest : public ::testing::Test {
  protected:
   TimedDoor* door;
   void SetUp() override {
-      door = new TimedDoor(1);
+  door = new TimedDoor(1);
   }
   void TearDown() override {
       delete door;
@@ -114,9 +120,9 @@ TEST(TimedDoorExtraTest, MultipleUnlocksStillThrowOnce) {
 
 TEST(TimerExtraTest, TimeoutNotCalledImmediately) {
     class TestClient : public TimerClient {
-     public:
-      bool called = false;
-      void Timeout() override { called = true; }
+    public:
+     bool called = false;
+     void Timeout() override { called = true; }
     };
     TestClient client;
     Timer timer;
