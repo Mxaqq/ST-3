@@ -62,9 +62,9 @@ TEST(TimerTest, CallsTimeoutAfterDelay) {
   timer.tregister(1, &client);
 
   auto start = std::chrono::steady_clock::now();
-  while (!client.called && 
-         std::chrono::steady_clock::now() - start < std::chrono::seconds(3)) {
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  while (!client.called &&
+      std::chrono::steady_clock::now() - start < std::chrono::seconds(3)) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
   EXPECT_TRUE(client.called);
 }
@@ -112,7 +112,6 @@ TEST(TimedDoorExtraTest, MultipleUnlocksStillThrowOnce) {
    public:
     std::atomic<int> timeoutCount{0};
     TestTimedDoor() : TimedDoor(1) {}
-    
     void throwState() override {
       timeoutCount++;
       TimedDoor::throwState();
@@ -125,9 +124,9 @@ TEST(TimedDoorExtraTest, MultipleUnlocksStillThrowOnce) {
 
   try {
     auto start = std::chrono::steady_clock::now();
-    while (door.timeoutCount == 0 && 
-           std::chrono::steady_clock::now() - start < std::chrono::seconds(3)) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    while (door.timeoutCount == 0 &&
+        std::chrono::steady_clock::now() - start < std::chrono::seconds(3)) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     EXPECT_EQ(door.timeoutCount, 1);
     throw std::runtime_error("Door left open too long!");
@@ -137,23 +136,19 @@ TEST(TimedDoorExtraTest, MultipleUnlocksStillThrowOnce) {
   }
 }
 
-TEST(TimedDoorExtraTest, MultipleUnlocksStartOnlyOneTimer) {
-    class TestableTimedDoor : public TimedDoor {
+TEST(TimedDoorExtraTest, LockPreventsTimeout) {
+    class MockTimerClient : public TimerClient {
      public:
-      std::atomic<int> timerStartCount{ 0 };
-      TestableTimedDoor(int timeout) : TimedDoor(timeout) {}
-      void unlock() override {
-      std::lock_guard<std::mutex> lock(timerMutex);
-      if (!isOpened) {
-          timerStartCount++;
-          TimedDoor::unlock();
-      }
-      }
+      MOCK_METHOD(void, Timeout, (), (override));
     };
-    TestableTimedDoor door(1);
+    MockTimerClient mockClient;
+    TimedDoor door(1);
+    EXPECT_CALL(mockClient, Timeout()).Times(0);
+    DoorTimerAdapter* originalAdapter = door.adapter;
+    door.adapter = new DoorTimerAdapter(mockClient);
     door.unlock();
-    EXPECT_EQ(door.timerStartCount, 1);
-    door.unlock();
-    EXPECT_EQ(door.timerStartCount, 1);
     door.lock();
+    std::this_thread::sleep_for(std::chrono::seconds(2));
+    delete door.adapter;
+    door.adapter = originalAdapter;
 }
