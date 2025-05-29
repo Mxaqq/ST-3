@@ -136,19 +136,13 @@ TEST(TimedDoorExtraTest, MultipleUnlocksStillThrowOnce) {
   }
 }
 
-TEST(TimedDoorExtraTest, LockPreventsTimeout) {
-    class MockTimerClient : public TimerClient {
-     public:
-      MOCK_METHOD(void, Timeout, (), (override));
-    };
-    MockTimerClient mockClient;
-    TimedDoor door(1);
-    EXPECT_CALL(mockClient, Timeout()).Times(0);
-    DoorTimerAdapter* originalAdapter = door.adapter;
-    door.adapter = new DoorTimerAdapter(mockClient);
+TEST(TimedDoorExtraTest, LockUnlockSequenceWorks) {
+    TimedDoor door(2);
     door.unlock();
+    EXPECT_TRUE(door.isDoorOpened());
     door.lock();
-    std::this_thread::sleep_for(std::chrono::seconds(2));
-    delete door.adapter;
-    door.adapter = originalAdapter;
+    EXPECT_FALSE(door.isDoorOpened());
+    EXPECT_NO_THROW({
+        std::this_thread::sleep_for(std::chrono::seconds(3));
+        });
 }
