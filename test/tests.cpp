@@ -10,6 +10,7 @@
 #include "TimedDoor.h"
 
 class MockDoor : public Door {
+
 public:
     MOCK_METHOD(void, lock, (), (override));
     MOCK_METHOD(void, unlock, (), (override));
@@ -17,12 +18,14 @@ public:
 };
 
 class MockTimerClient : public TimerClient {
+
 public:
     MOCK_METHOD(void, Timeout, (), (override));
 };
 
 TEST(DoorTimerAdapterTest, CallsThrowStateIfDoorOpened) {
     class TestDoor : public TimedDoor {
+
     public:
         bool shouldThrow = true;
         TestDoor() : TimedDoor(1) {}
@@ -36,7 +39,8 @@ TEST(DoorTimerAdapterTest, CallsThrowStateIfDoorOpened) {
 }
 
 TEST(DoorTimerAdapterTest, DoesNothingIfDoorClosed) {
-    class TestDoor : public TimedDoor {
+    class TestDoor : public TimedDoor 
+
     public:
         bool shouldThrow = false;
         TestDoor() : TimedDoor(1) {}
@@ -51,6 +55,7 @@ TEST(DoorTimerAdapterTest, DoesNothingIfDoorClosed) {
 
 TEST(TimerTest, CallsTimeoutAfterDelay) {
     class TestClient : public TimerClient {
+
     public:
         bool called = false;
         void Timeout() override { called = true; }
@@ -65,6 +70,7 @@ TEST(TimerTest, CallsTimeoutAfterDelay) {
 }
 
 class TimedDoorTest : public ::testing::Test {
+
 protected:
     TimedDoor* door;
 
