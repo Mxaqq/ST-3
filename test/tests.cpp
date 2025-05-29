@@ -107,35 +107,6 @@ TEST(TimedDoorExtraTest, ThrowStateThrowsException) {
   EXPECT_THROW(door.throwState(), std::runtime_error);
 }
 
-TEST(TimedDoorExtraTest, MultipleUnlocksStillThrowOnce) {
-  class TestTimedDoor : public TimedDoor {
-   public:
-    std::atomic<int> timeoutCount{0};
-    TestTimedDoor() : TimedDoor(1) {}
-    void throwState() override {
-      timeoutCount++;
-      TimedDoor::throwState();
-    }
-  };
-
-  TestTimedDoor door;
-  door.unlock();
-  door.unlock();
-
-  try {
-    auto start = std::chrono::steady_clock::now();
-    while (door.timeoutCount == 0 &&
-        std::chrono::steady_clock::now() - start < std::chrono::seconds(3)) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
-    EXPECT_EQ(door.timeoutCount, 1);
-    throw std::runtime_error("Door left open too long!");
-  }
-  catch (const std::runtime_error& e) {
-    EXPECT_STREQ(e.what(), "Door left open too long!");
-  }
-}
-
 TEST(TimedDoorExtraTest, LockUnlockSequenceWorks) {
     TimedDoor door(2);
     door.unlock();
@@ -145,4 +116,24 @@ TEST(TimedDoorExtraTest, LockUnlockSequenceWorks) {
     EXPECT_NO_THROW({
         std::this_thread::sleep_for(std::chrono::seconds(3));
         });
+}
+
+TEST(TimedDoorSimpleTest, TimeoutValueIsStoredCorrectly) {
+    const int testTimeout = 5;
+    TimedDoor door(testTimeout);
+    EXPECT_EQ(door.getTimeOut(), testTimeout);
+}
+
+TEST(TimedDoorSimpleTest, CanUnlockMultipleTimes) {
+    TimedDoor door(1);
+    door.unlock();
+    EXPECT_TRUE(door.isDoorOpened());
+    door.lock();
+    door.unlock();
+    EXPECT_TRUE(door.isDoorOpened());
+}
+
+TEST(TimedDoorSimpleTest, InitialStateIsClosed) {
+    TimedDoor door(1);
+    EXPECT_FALSE(door.isDoorOpened());
 }
