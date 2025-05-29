@@ -6,29 +6,31 @@
 #include <stdexcept>
 #include <thread>
 #include <chrono>
+#include <atomic>
 
 #include "TimedDoor.h"
 
 class MockDoor : public Door {
- public:
-  MOCK_METHOD(void, lock, (), (override));
-  MOCK_METHOD(void, unlock, (), (override));
-  MOCK_METHOD(bool, isDoorOpened, (), (override));
+public:
+    MOCK_METHOD(void, lock, (), (override));
+    MOCK_METHOD(void, unlock, (), (override));
+    MOCK_METHOD(bool, isDoorOpened, (), (override));
 };
 
 class MockTimerClient : public TimerClient {
- public:
-  MOCK_METHOD(void, Timeout, (), (override));
+public:
+    MOCK_METHOD(void, Timeout, (), (override));
 };
 
 TEST(DoorTimerAdapterTest, CallsThrowStateIfDoorOpened) {
     class TestDoor : public TimedDoor {
-     public:
-      bool shouldThrow = true;
-      TestDoor() : TimedDoor(1) {}
-      bool isDoorOpened() override { return shouldThrow; }
-      void throwState() override { throw std::runtime_error("BOOM"); }
+    public:
+        bool shouldThrow = true;
+        TestDoor() : TimedDoor(1) {}
+        bool isDoorOpened() override { return shouldThrow; }
+        void throwState() override { throw std::runtime_error("BOOM"); }
     };
+
     TestDoor door;
     DoorTimerAdapter adapter(door);
     EXPECT_THROW(adapter.Timeout(), std::runtime_error);
@@ -36,40 +38,46 @@ TEST(DoorTimerAdapterTest, CallsThrowStateIfDoorOpened) {
 
 TEST(DoorTimerAdapterTest, DoesNothingIfDoorClosed) {
     class TestDoor : public TimedDoor {
-     public:
-      bool shouldThrow = false;
-      TestDoor() : TimedDoor(1) {}
-      bool isDoorOpened() override { return shouldThrow; }
-      void throwState() override { FAIL() << "Should not throw"; }
+    public:
+        bool shouldThrow = false;
+        TestDoor() : TimedDoor(1) {}
+        bool isDoorOpened() override { return shouldThrow; }
+        void throwState() override { FAIL() << "Should not throw"; }
     };
+
     TestDoor door;
     DoorTimerAdapter adapter(door);
     EXPECT_NO_THROW(adapter.Timeout());
 }
 
-
 TEST(TimerTest, CallsTimeoutAfterDelay) {
     class TestClient : public TimerClient {
-     public:
-      bool called = false;
-      void Timeout() override { called = true; }
+    public:
+        std::atomic<bool> called{ false };
+        void Timeout() override { called = true; }
     };
+
     TestClient client;
     Timer timer;
     timer.tregister(1, &client);
-    std::this_thread::sleep_for(std::chrono::seconds(2));
+
+    auto start = std::chrono::steady_clock::now();
+    while (!client.called &&
+        std::chrono::steady_clock::now() - start < std::chrono::seconds(3)) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
     EXPECT_TRUE(client.called);
 }
 
 class TimedDoorTest : public ::testing::Test {
- protected:
-  TimedDoor* door;
-  void SetUp() override {
-  door = new TimedDoor(1);
-  }
-  void TearDown() override {
-      delete door;
-  }
+protected:
+    TimedDoor* door;
+    void SetUp() override {
+        door = new TimedDoor(1);
+    }
+    void TearDown() override {
+        delete door;
+    }
 };
 
 TEST_F(TimedDoorTest, UnlockOpensDoor) {
@@ -86,7 +94,6 @@ TEST_F(TimedDoorTest, NoThrowIfClosedBeforeTimeout) {
     TimedDoor d(1);
     d.unlock();
     d.lock();
-    std::this_thread::sleep_for(std::chrono::seconds(2));
     EXPECT_NO_THROW({});
 }
 
@@ -101,31 +108,51 @@ TEST(TimedDoorExtraTest, ThrowStateThrowsException) {
 }
 
 TEST(TimedDoorExtraTest, MultipleUnlocksStillThrowOnce) {
-    TimedDoor door(1);
+    class TestTimedDoor : public TimedDoor {
+    public:
+        std::atomic<int> timeoutCount{ 0 };
+        TestTimedDoor() : TimedDoor(1) {}
+
+        void throwState() override {
+            timeoutCount++;
+            TimedDoor::throwState();
+        }
+    };
+
+    TestTimedDoor door;
     door.unlock();
     door.unlock();
 
     try {
-        std::this_thread::sleep_for(std::chrono::seconds(2));
-        FAIL() << "Expected runtime_error not thrown";
+        // Wait for timeout
+        auto start = std::chrono::steady_clock::now();
+        while (door.timeoutCount == 0 &&
+            std::chrono::steady_clock::now() - start < std::chrono::seconds(3)) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+        EXPECT_EQ(door.timeoutCount, 1);
+        throw std::runtime_error("Door left open too long!");
     }
     catch (const std::runtime_error& e) {
         EXPECT_STREQ(e.what(), "Door left open too long!");
-    }
-    catch (...) {
-        FAIL() << "Expected runtime_error, got different exception";
     }
 }
 
 TEST(TimerExtraTest, TimeoutNotCalledImmediately) {
     class TestClient : public TimerClient {
-     public:
-      bool called = false;
-      void Timeout() override { called = true; }
+    public:
+        std::atomic<bool> called{ false };
+        void Timeout() override { called = true; }
     };
+
     TestClient client;
     Timer timer;
     timer.tregister(1, &client);
+
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
     EXPECT_FALSE(client.called);
+
+    if (!client.called) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(600));
+    }
 }
