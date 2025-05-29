@@ -8,7 +8,8 @@
 #include <chrono>
 
 class MockDoor : public Door {
-public: 
+public:
+
     MOCK_METHOD(void, lock, (), (override));
     MOCK_METHOD(void, unlock, (), (override));
     MOCK_METHOD(bool, isDoorOpened, (), (override));
@@ -16,12 +17,14 @@ public:
 
 class MockTimerClient : public TimerClient {
 public: 
+
     MOCK_METHOD(void, Timeout, (), (override));
 };
 
 TEST(DoorTimerAdapterTest, CallsThrowStateIfDoorOpened) {
     class TestDoor : public TimedDoor {
     public: 
+
         bool shouldThrow = true;
         TestDoor() : TimedDoor(1) {}
         bool isDoorOpened() override { return shouldThrow; }
@@ -36,6 +39,7 @@ TEST(DoorTimerAdapterTest, CallsThrowStateIfDoorOpened) {
 TEST(DoorTimerAdapterTest, DoesNothingIfDoorClosed) {
     class TestDoor : public TimedDoor {
     public: 
+
         bool shouldThrow = false;
         TestDoor() : TimedDoor(1) {}
         bool isDoorOpened() override { return shouldThrow; }
@@ -50,6 +54,7 @@ TEST(DoorTimerAdapterTest, DoesNothingIfDoorClosed) {
 TEST(TimerTest, CallsTimeoutAfterDelay) {
     class TestClient : public TimerClient {
     public: 
+
         bool called = false;
         void Timeout() override { called = true; }
     };
@@ -64,6 +69,7 @@ TEST(TimerTest, CallsTimeoutAfterDelay) {
 
 class TimedDoorTest : public ::testing::Test {
 protected: 
+
     TimedDoor* door;
 
     void SetUp() override {
@@ -116,12 +122,14 @@ TEST(TimedDoorExtraTest, MultipleUnlocksStillThrowOnce) {
     TimedDoor door(1);
     door.unlock();
     door.unlock();
-    EXPECT_THROW(std::this_thread::sleep_for(std::chrono::seconds(2)), std::runtime_error);
+    EXPECT_THROW(std::this_thread::sleep_for(std::chrono::seconds(2)), 
+        std::runtime_error);
 }
 
 TEST(TimerExtraTest, TimeoutNotCalledImmediately) {
     class TestClient : public TimerClient {
     public: 
+
         bool called = false;
         void Timeout() override { called = true; }
     };
