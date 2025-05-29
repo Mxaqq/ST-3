@@ -8,23 +8,23 @@
 #include <chrono>
 
 class MockDoor : public Door {
-public:
 
+public:
     MOCK_METHOD(void, lock, (), (override));
     MOCK_METHOD(void, unlock, (), (override));
     MOCK_METHOD(bool, isDoorOpened, (), (override));
 };
 
 class MockTimerClient : public TimerClient {
-public: 
 
+public: 
     MOCK_METHOD(void, Timeout, (), (override));
 };
 
 TEST(DoorTimerAdapterTest, CallsThrowStateIfDoorOpened) {
     class TestDoor : public TimedDoor {
-    public: 
 
+    public: 
         bool shouldThrow = true;
         TestDoor() : TimedDoor(1) {}
         bool isDoorOpened() override { return shouldThrow; }
@@ -38,8 +38,8 @@ TEST(DoorTimerAdapterTest, CallsThrowStateIfDoorOpened) {
 
 TEST(DoorTimerAdapterTest, DoesNothingIfDoorClosed) {
     class TestDoor : public TimedDoor {
-    public: 
 
+    public: 
         bool shouldThrow = false;
         TestDoor() : TimedDoor(1) {}
         bool isDoorOpened() override { return shouldThrow; }
@@ -68,8 +68,8 @@ TEST(TimerTest, CallsTimeoutAfterDelay) {
 }
 
 class TimedDoorTest : public ::testing::Test {
-protected: 
 
+protected: 
     TimedDoor* door;
 
     void SetUp() override {
